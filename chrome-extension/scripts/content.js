@@ -1,15 +1,76 @@
-/* 
 
-	Run webgazer
-
-*/
 appendLoop = '';
-eyeData = [];
-runs = 0;
 
-setTimeout(function (){
-	initGazer();
-},50);
+var player;
+var ele;
+var volume;
+var time;
+
+var playerReady = false;
+var calibrated = false;
+
+var width = 300;
+var height = 230;
+var topDist = '0px';
+var leftDist = '0px';
+
+
+// need to sync with popup's default value initially
+var topMargin = 0;
+var leftMargin = 0;
+var bottomMargin = 0;
+var rightMargin = 0;
+var pauseTimeout = 0;
+
+
+////////////// EventListeners ///////////////////
+
+document.addEventListener('ready', function(event) {
+    console.log('receive ready');
+    playerReady = true;
+});
+
+document.addEventListener('volume-value', function(event) {
+    console.log('receive volume value: ', event.detail);
+    volume = event.detail
+    
+});
+
+document.addEventListener('playback-value', function(event) {
+    console.log('receive playback value: ' + event.detail);
+    time = event.detail;
+    
+});
+
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        console.log(request);
+
+        if (request.msg == "update-parameters") {
+            topMargin = request.topMarginVal;
+            leftMargin = request.leftMarginVal;
+            bottomMargin = request.bottomMarginVal;
+            rightMargin = request.rightMarginVal;
+            pauseTimeout = request.pauseTimeoutVal;
+            calibrated = request.calibratedVal;
+
+            sendResponse({response: "end"});
+        }
+        
+
+        if (request.msg === "get-parameters") {
+            sendResponse({topMarginVal: topMargin, leftMarginVal: leftMargin, 
+            bottomMarginVal: bottomMargin, rightMarginVal: rightMargin,
+            pauseTimeoutVal: pauseTimeout,calibratedVal: calibrated});
+        }
+
+        
+});
+
+//////////////////////////////////////////////////
+
+
+////////////////////////// Functions /////////////////////////
 
 function initGazer() {
 	var compatible = webgazer.detectCompatibility();
@@ -22,11 +83,10 @@ function initGazer() {
 	    	webgazer.setRegression('ridge') /* currently must set regression and tracker */
 		        .setTracker('clmtrackr')
 		        .setGazeListener(function(data, clock) {
-					// !!!!!!
-		            // console.log(data);
-		          //   console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
-
-				  // TODO: do the control logic here
+                    console.log(data);
+                    if (playerReady == true && calibrated == true) {
+                        handleData(data);
+                    }
 		        })
 		        .begin()
 		        .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
@@ -70,10 +130,6 @@ function initGazer() {
 		}
     });
 }
-	var width = 300;
-    var height = 230;
-    var topDist = '0px';
-    var leftDist = '0px';
 
 //Set up the webgazer video feedback.
 var setup = function() {
@@ -149,6 +205,55 @@ var setup = function() {
     setTimeout(appendLoop = setInterval(appendData,100),5000);
 
  }
+
+
+function injectScript(file, node) {
+    var th = document.getElementsByTagName(node)[0];
+    var s = document.createElement('script');
+    s.setAttribute('type', 'text/javascript');
+    s.setAttribute('src', file);
+    th.appendChild(s);
+    return s;
+}
+
+function play() {
+    document.dispatchEvent(new CustomEvent('play'));
+}
+
+function pause() {
+    document.dispatchEvent(new CustomEvent('pause'));
+}
+
+function setVolume(val) {
+    document.dispatchEvent(new CustomEvent('set-volume', {
+        detail: val
+    }));
+}
+
+// val in seconds
+function playback(val) {
+    document.dispatchEvent(new CustomEvent('playback', {
+        detail: val
+    }));
+}
+
+function handleData(data) {
+
+}
+
+////////////////////////////////////////////////////////////
+
+
+console.log("content.js injected");
+
+ele = injectScript( chrome.runtime.getURL('scripts/control.js'), 'body');
+setTimeout(function (){
+	initGazer();
+},50);
+
+
+
+
 
 
 

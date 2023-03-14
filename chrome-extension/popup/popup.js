@@ -66,4 +66,57 @@ function toggleCamera(truth) {
 }
 
 
+/////////////////////////////////////////////
+
+var topMargin;
+var leftMargin;
+var bottomMargin;
+var rightMargin;
+var pauseTimeout;
+var calibrated;
+
+
+function parametersChanged() {
+	console.log("changed");
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, 
+			{msg: "update-parameters", topMarginVal: topMargin.value, leftMarginVal: leftMargin.value,
+			rightMarginVal: rightMargin.value, bottomMarginVal: bottomMargin.value,
+			pauseTimeoutVal: pauseTimeout.value, calibratedVal: calibrated.checked}, 
+			function(response) {
+        });
+    });
+}
+
+
+window.onload = function() {
+	topMargin = document.getElementById("topMargin");
+	leftMargin = document.getElementById("leftMargin");
+	bottomMargin = document.getElementById("bottomMargin");
+	rightMargin = document.getElementById("rightMargin");
+	pauseTimeout = document.getElementById("pauseTimeout");
+	calibrated = document.getElementById("calibrated");
+
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, 
+			{msg: "get-parameters"}, 
+			function(response) {
+				topMargin.value = response.topMarginVal;
+				leftMargin.value = response.leftMarginVal;
+				bottomMargin.value = response.bottomMarginVal;
+				rightMargin.value = response.rightMarginVal;
+				pauseTimeout.value = response.pauseTimeoutVal;
+				calibrated.checked = response.calibratedVal;
+        });
+    });
+
+
+	topMargin.addEventListener("change", parametersChanged);
+	leftMargin.addEventListener("change", parametersChanged);
+	bottomMargin.addEventListener("change", parametersChanged);
+	rightMargin.addEventListener("change", parametersChanged);
+	pauseTimeout.addEventListener("change", parametersChanged);
+	calibrated.addEventListener("change", parametersChanged);
+}
+
 

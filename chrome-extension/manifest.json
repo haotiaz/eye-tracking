@@ -9,11 +9,14 @@
     },
     "options_page": "options.html",
     "browser_action": {
-      "default_popup": "popup.html"
+      "default_popup": "popup/popup.html"
     },
     "content_scripts": [{
-      "matches": ["https://*/*"],
-      "js": ["content.js","webgazer.js"]
+      "matches": ["https://www.netflix.com/watch/*"],
+      "js": ["scripts/content.js","webgazer.js"]
     }],
+    "web_accessible_resources" : [
+      "scripts/control.js"
+    ],
     "manifest_version": 2
   }
