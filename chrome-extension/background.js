@@ -9,3 +9,15 @@
     })
   });
 
+  chrome.commands.onCommand.addListener(function (command) {
+    if (command === "calibrate") {
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, 
+			{msg: "toggle-calibration"}, 
+			function(response) {
+				
+      });
+    });
+    }
+});
+

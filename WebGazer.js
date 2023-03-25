@@ -10424,7 +10424,7 @@ function store_points(x, y, k) {
 
     //DEBUG variables
     //debug control boolean
-    var showGazeDot = false;
+    // var showGazeDot = false;
     //debug element (starts offscreen)
     var gazeDot = document.createElement('div');
     gazeDot.style.position = 'fixed';
@@ -10637,10 +10637,10 @@ function store_points(x, y, k) {
         var gazeData = getPrediction();
         var elapsedTime = performance.now() - clockStart;
 
-        callback(gazeData, elapsedTime);
+        // callback(gazeData, elapsedTime);
+        console.log(showGazeDot);
 
         if (gazeData && showGazeDot) {
-
             smoothingVals.push(gazeData);
             var x = 0;
             var y = 0;

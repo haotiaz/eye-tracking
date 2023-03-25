@@ -14,13 +14,18 @@ var height = 230;
 var topDist = '0px';
 var leftDist = '0px';
 
+var textPersistTime = 1500;
 
-// need to sync with popup's default value initially
-var topMargin = 0;
-var leftMargin = 0;
-var bottomMargin = 0;
-var rightMargin = 0;
-var pauseTimeout = 0;
+
+var topMargin = 180;
+var leftMargin = 180;
+var bottomMargin = 180;
+var rightMargin = 180;
+
+
+// var showGazeDot = true;
+
+var calibrationInstruction = "Press Alt+Shift+C (Option+Shift+C on Mac) to finish the calibration. You can return to the calibration step by the same shortcut";
 
 
 ////////////// EventListeners ///////////////////
@@ -32,14 +37,52 @@ document.addEventListener('ready', function(event) {
 
 document.addEventListener('volume-value', function(event) {
     console.log('receive volume value: ', event.detail);
-    volume = event.detail
-    
+    volume = event.detail.volume;
+    console.log(event.detail.msg);
+    if (event.detail.type === "up") {
+        console.log("up");
+        injectTopText("Volume: " + (volume*100).toFixed(0) + "%", 'body', textPersistTime);
+    }
+    else {
+        console.log("down");
+        injectBottomText("Volume: " + (volume*100).toFixed(0) + "%", 'body', textPersistTime);
+    }
 });
 
 document.addEventListener('playback-value', function(event) {
-    console.log('receive playback value: ' + event.detail);
-    time = event.detail;
+    console.log('receive playback value: ' + event.detail.time);
+    time = event.detail.time;
+
+    var min = Math.floor((time%3600)/60);
+    var minString = "" + min;
+    if (min < 10) {
+        minString = "0" + minString;
+    }
+
+    var sec = time%3600%60;
+    var secString = "" + sec;
+    if (sec < 10) {
+        secString = "0" + secString;
+    }
+
+    var timeString = Math.floor(time/3600) + ":" + minString + ":" + secString;
+
+
+    if (event.detail.type === "backward") {
+        injectLeftText("<< " + timeString, 'body', textPersistTime);
+    }
+    else {
+        injectRightText(timeString + " >>", 'body', textPersistTime);
+    }
     
+});
+
+document.addEventListener('played', function(event) {
+    injectMiddleText("Playing", 'body', textPersistTime);
+});
+
+document.addEventListener('paused', function(event) {
+    injectMiddleText("Paused", 'body', textPersistTime);
 });
 
 chrome.runtime.onMessage.addListener(
@@ -55,6 +98,8 @@ chrome.runtime.onMessage.addListener(
             calibrated = request.calibratedVal;
 
             sendResponse({response: "end"});
+
+            setCalibrationElements();
         }
         
 
@@ -64,6 +109,11 @@ chrome.runtime.onMessage.addListener(
             pauseTimeoutVal: pauseTimeout,calibratedVal: calibrated});
         }
 
+        if (request.msg === "toggle-calibration") {
+            calibrated = !calibrated;
+            setCalibrationElements();
+            sendResponse({response: "end"});
+        }
         
 });
 
@@ -83,7 +133,7 @@ function initGazer() {
 	    	webgazer.setRegression('ridge') /* currently must set regression and tracker */
 		        .setTracker('clmtrackr')
 		        .setGazeListener(function(data, clock) {
-                    console.log(data);
+                    // console.log(data);
                     if (playerReady == true && calibrated == true) {
                         handleData(data);
                     }
@@ -112,12 +162,6 @@ function initGazer() {
 							document.getElementById('webgazerVideoFeed').style.display='block';
 							document.getElementById('overlay').hidden=true;
 							setup();
-						}
-
-						if(request.state) {
-
-						} else if (!request.state){
-							//stopAppending();
 						}
 					});
 
@@ -202,9 +246,174 @@ var setup = function() {
     drawLoop();
     console.log(width,height);
     if(appendLoop) stopAppending();
-    setTimeout(appendLoop = setInterval(appendData,100),5000);
+    // setTimeout(appendLoop = setInterval(appendData,100),5000);
+}
 
- }
+function injectCalibrationElements() {
+    var body = document.getElementsByTagName('body')[0];
+
+    var s = document.createElement('div');
+    s.style.position = "fixed";
+    s.style.top = "0px";
+    s.style.left = "0px";
+    s.style.width = "100%";
+    s.style.height = "100%";
+    s.className = "calibration";
+    s.id = "calibration_container";
+    body.appendChild(s);
+
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    var leftDot = document.createElement('span');
+    leftDot.style.position = "fixed";
+    leftDot.style.left = "10px";
+    leftDot.style.top =  (h/2 - 12.5) + "px";
+    leftDot.style.width = "25px";
+    leftDot.style.height = "25px";
+    leftDot.style.borderRadius = "50%";
+    leftDot.style.backgroundColor = "red";
+    leftDot.className = "calibration";
+    s.appendChild(leftDot);
+
+    var rightDot = document.createElement('span');
+    rightDot.style.position = "fixed";
+    rightDot.style.top = (h/2 - 12.5) + "px";
+    rightDot.style.left = (w - 35) +"px";
+    rightDot.style.width = "25px";
+    rightDot.style.height = "25px";
+    rightDot.style.borderRadius = "50%";
+    rightDot.style.backgroundColor = "red";
+    rightDot.className = "calibration";
+    s.appendChild(rightDot);
+
+    var topDot = document.createElement('span');
+    topDot.style.position = "fixed";
+    topDot.style.top = "10px";
+    topDot.style.left = (w/2 - 12.5) + "px";
+    topDot.style.width = "25px";
+    topDot.style.height = "25px";
+    topDot.style.borderRadius = "50%";
+    topDot.style.backgroundColor = "red";
+    topDot.className = "calibration";
+    s.appendChild(topDot);
+
+    var bottomDot = document.createElement('span');
+    bottomDot.style.position = "fixed";
+    bottomDot.style.top = (h - 35) +"px";
+    bottomDot.style.left = (w/2 - 12.5) + "px";
+    bottomDot.style.width = "25px";
+    bottomDot.style.height = "25px";
+    bottomDot.style.borderRadius = "50%";
+    bottomDot.style.backgroundColor = "red";
+    bottomDot.className = "calibration";
+    s.appendChild(bottomDot);
+
+    var middleDot = document.createElement('span');
+    middleDot.style.position = "fixed";
+    middleDot.style.top = (h/2 - 12.5) + "px";
+    middleDot.style.left = (w/2 - 12.5) + "px";
+    middleDot.style.width = "25px";
+    middleDot.style.height = "25px";
+    middleDot.style.borderRadius = "50%";
+    middleDot.style.backgroundColor = "red";
+    middleDot.className = "calibration";
+    s.appendChild(middleDot);
+
+    var prompt = document.createElement('div');
+    prompt.style.backgroundColor = 'white';
+    prompt.style.color = "black";
+    prompt.style.width = "50%";
+    prompt.style.height = "30%";
+    prompt.style.position = "relative";
+    prompt.style.margin = "auto";
+    // prompt.style.top = "50px";
+    prompt.style.top = "100px";
+    prompt.style.transform = "translateY(-300%)";
+    prompt.style.opacity = "0.95";
+    prompt.style.borderRadius = "20px";
+    prompt.style.padding = "20px";
+
+    var title = document.createElement('div');
+    title.innerHTML = "Calibration instruction";
+    title.style.fontSize = "20px";
+    title.style.textAlign = "center";
+    prompt.appendChild(title);
+
+    var content = document.createElement('p');
+    content.innerHTML = calibrationInstruction;
+    content.style.fontSize = "15px";
+    prompt.appendChild(content);
+
+    var leftBox = document.createElement('div');
+    leftBox.id = "left-box";
+    leftBox.style.width = leftMargin + "px";
+    leftBox.style.height = "100%";
+    leftBox.style.position = "relative";
+    leftBox.style.borderRight = "4px solid #00FF00";
+    s.appendChild(leftBox);
+
+    var topBox = document.createElement('div');
+    topBox.id = "top-box";
+    topBox.style.width = "100%";
+    topBox.style.height = topMargin + "px";
+    topBox.style.position = "fixed";
+    topBox.style.top = "0px";
+    topBox.style.left = "0px";
+    topBox.style.borderBottom = "4px solid #00FF00";
+    s.appendChild(topBox);
+
+    var rightBox = document.createElement('div');
+    rightBox.id = "right-box";
+    rightBox.style.width = rightMargin + "px";
+    rightBox.style.height = "100%";
+    rightBox.style.position = "fixed";
+    rightBox.style.top = "0px";
+    rightBox.style.right = "0px";
+    rightBox.style.borderLeft = "4px solid #00FF00";
+    s.appendChild(rightBox);
+
+    var bottomBox = document.createElement('div');
+    bottomBox.id = "bottom-box";
+    bottomBox.style.width = "100%";
+    bottomBox.style.height = bottomMargin + "px";
+    bottomBox.style.position = "fixed";
+    bottomBox.style.bottom = "0px";
+    bottomBox.style.left = "0px";
+    bottomBox.style.borderTop = "4px solid #00FF00";
+    s.appendChild(bottomBox);
+    
+
+    s.appendChild(prompt);
+
+
+    setCalibrationElements();
+}
+
+function setCalibrationElements() {
+    var s = document.getElementById("calibration_container");
+    if (calibrated == true) {
+        s.style.zIndex = "-10000";
+        webgazer.showPredictionPoints(false);
+    }
+    else {
+        s.style.zIndex = "10000";
+        pause();
+        webgazer.showPredictionPoints(true);
+
+        var topBox = document.getElementById('top-box');
+        topBox.style.height = topMargin + 'px';
+
+        var leftBox = document.getElementById('left-box');
+        leftBox.style.width = leftMargin + 'px';
+
+        var bottomBox = document.getElementById('bottom-box');
+        bottomBox.style.height = bottomMargin + 'px';
+
+        var rightBox = document.getElementById('right-box');
+        rightBox.style.width = rightMargin + 'px';
+    }
+}
 
 
 function injectScript(file, node) {
@@ -216,12 +425,88 @@ function injectScript(file, node) {
     return s;
 }
 
+function injectMiddleText(text, node, existTime) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    injectCommandText(text, node, existTime, w/2, h/2);
+}
+
+
+function injectLeftText(text, node, existTime) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    injectCommandText(text, node, existTime, 15, h/2);
+}
+
+function injectTopText(text, node, existTime) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    injectCommandText(text, node, existTime, w/2, 15);
+}
+
+function injectBottomText(text, node, existTime) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    injectCommandText(text, node, existTime, w/2, h - 80);
+}
+
+function injectRightText(text, node, existTime) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    injectCommandText(text, node, existTime, w - 200, h/2);
+}
+
+
+function injectCommandText(text, node, existTime, x, y) {
+    var th = document.getElementsByTagName(node)[0];
+
+    var s = document.getElementById("command-text");
+    if (s != null || s != undefined) {
+        s.remove()
+    }
+
+    s = document.createElement('div');
+    s.setAttribute('id', 'command-text');
+
+    s.innerHTML = text;
+    s.style.backgroundColor = 'white';
+    s.style.color = 'black';
+    s.style.fontSize = '20px';
+    s.style.textAlign = "center";
+    s.style.position = "fixed";
+    s.style.top = y+"px";
+    s.style.left = x+"px";
+    s.style.zIndex = "1000000";
+    s.style.width = "fit-content";
+    // s.style.height = "30px";
+    s.style.borderRadius = "25px";
+    s.style.padding = "15px";
+
+    th.appendChild(s);
+    console.log("text injected");
+
+    setTimeout(function() {
+        if (th.contains(s)) {
+            s.remove();
+        }
+    }, existTime);
+}
+
+
+
 function play() {
     document.dispatchEvent(new CustomEvent('play'));
+    console.log("content: play");
 }
 
 function pause() {
     document.dispatchEvent(new CustomEvent('pause'));
+    console.log("content: pause");
+}
+
+function pauseWithoutText() {
+    document.dispatchEvent(new CustomEvent('pause'));
+    console.log("pause");
 }
 
 function setVolume(val) {
@@ -237,8 +522,118 @@ function playback(val) {
     }));
 }
 
-function handleData(data) {
+//////////////// logic /////////////////////
 
+var prevAction = "";
+
+var playCounter = 0;
+const playTolerance = 40;
+
+var pauseTimeout = 5; // in seconds
+var pauseID = 0;
+
+var middleCounter = 0;
+const middleTolerance = 3;
+
+var prevArea = "";
+var areaCounter = 0;
+const areaTolerance = 10;
+
+var W = window.innerWidth;
+var H = window.innerHeight;
+
+function handleData(data) {
+    // console.log(data);
+    if (data != null) {
+        const x = data.x;
+        const y = data.y;
+
+        var area = getArea(x, y);
+        console.log(area);
+
+        if (area !== "left" && area !== "right") {
+            if (prevAction === "play") {
+                playCounter += 1;
+            }
+            else {
+                playCounter = 0;
+                prevAction = "play";
+            }
+            if (playCounter >= playTolerance) {
+                pauseID += 1;
+                play();
+                playCounter = 0;
+            }
+        }
+        handleCommand(area);
+    }
+    else {
+        if (prevAction !== "pause") {
+            prevAction = "pause";
+            setTimeout(function(id) {
+                if (id == pauseID && prevAction === "pause") {
+                    pause();
+                }
+            }, pauseTimeout * 1000 + 100, pauseID);
+
+        }
+    }
+}
+
+function getArea(x, y) {
+    if (x < leftMargin) {
+        return "left";
+    }
+    else if (x + rightMargin >= W) {
+        // console.log(x + " " + rightMargin + " " + W);
+        return "right";
+    }
+    else if (y<topMargin) {
+        return "top";
+    }
+    else if (y + bottomMargin >= H) {
+        return "bottom";
+    }
+    return "middle";
+}
+
+function handleCommand(area) {
+    if (area === prevArea) {
+        areaCounter += 1;
+    }
+    else {
+        areaCounter = 1;
+        if (area === "middle") {
+            middleCounter += 1;
+            if (middleCounter >= middleTolerance) {
+                prevArea = area;
+            }
+        }
+        else {
+            prevArea = area;
+        }
+    }
+
+    if (area !== "middle") {
+        middleCounter = 0;
+    }
+    
+    if (areaCounter >= areaTolerance) {
+        console.log(area);
+        areaCounter = 0;
+        if (area === "left") {
+            playback(-20);
+        }
+        else if (area === "right") {
+            playback(20);
+        }
+        if (area === "top") {
+            setVolume(0.1);
+        }
+        if (area === "bottom") {
+            setVolume(-0.1);
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////
@@ -247,12 +642,30 @@ function handleData(data) {
 console.log("content.js injected");
 
 ele = injectScript( chrome.runtime.getURL('scripts/control.js'), 'body');
-setTimeout(function (){
-	initGazer();
-},50);
+var loadingTime = 3000;
+
+injectMiddleText("Loading...", 'body', loadingTime);
+
+setTimeout(function() {
+    run();
+}, loadingTime);
 
 
+function run() {
+    injectCalibrationElements();
+    initGazer();
+}
 
+// injectCalibrationElements();
+
+
+// setTimeout(function() {
+//     pause();
+// }, 10000);
+
+// setTimeout(function() {
+//     pause();
+// }, 15000);
 
 
 
