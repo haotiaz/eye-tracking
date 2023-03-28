@@ -17,10 +17,17 @@ var leftDist = '0px';
 var textPersistTime = 1500;
 
 
-var topMargin = 180;
-var leftMargin = 180;
-var bottomMargin = 180;
-var rightMargin = 180;
+var topMargin = 220;
+var leftMargin = 220;
+var bottomMargin = 220;
+var rightMargin = 220;
+
+var loaded = false;
+
+var volumeIncRate = 10;
+var volumeDecRate = 10;
+var forwardRate = 15;
+var rewindRate = 30;
 
 
 // var showGazeDot = true;
@@ -130,16 +137,28 @@ function initGazer() {
         console.log(on);
 		if (compatible&&on) {
 			//start the webgazer tracker
-	    	webgazer.setRegression('ridge') /* currently must set regression and tracker */
-		        .setTracker('clmtrackr')
-		        .setGazeListener(function(data, clock) {
-                    // console.log(data);
-                    if (playerReady == true && calibrated == true) {
-                        handleData(data);
-                    }
-		        })
-		        .begin()
-		        .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+	    	// webgazer.setRegression('ridge') /* currently must set regression and tracker */
+		    //     .setTracker('clmtrackr')
+		    //     .setGazeListener(function(data, clock) {
+            //         // console.log(data);
+            //         if (playerReady == true && calibrated == true) {
+            //             handleData(data);
+            //         }
+		    //     })
+		    //     .begin()
+		    //     .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+            webgazer.setGazeListener(function(data, clock) {
+                if (!loaded) {
+                    loaded = true;
+                    injectCalibrationElements();
+                } 
+                // console.log(data);
+                if (playerReady == true && calibrated == true) {
+                    handleData(data);
+                }
+            }).begin();
+            webgazer.showPredictionPoints(true);
+
 	        function checkIfReady() {
 		        if (webgazer.isReady()) {
 		        	console.log('ready');
@@ -167,10 +186,10 @@ function initGazer() {
 
 		            setup();
 		        } else {
-		            setTimeout(checkIfReady, 100);
+		            // setTimeout(checkIfReady, 100);
 		        }
 		    }
-		    setTimeout(checkIfReady,100);
+		    // setTimeout(checkIfReady,100);
 		}
     });
 }
@@ -527,7 +546,7 @@ function playback(val) {
 var prevAction = "";
 
 var playCounter = 0;
-const playTolerance = 40;
+const playTolerance = 5;
 
 var pauseTimeout = 5; // in seconds
 var pauseID = 0;
@@ -642,19 +661,14 @@ function handleCommand(area) {
 console.log("content.js injected");
 
 ele = injectScript( chrome.runtime.getURL('scripts/control.js'), 'body');
-var loadingTime = 3000;
 
-injectMiddleText("Loading...", 'body', loadingTime);
+injectMiddleText("Loading...", 'body', 10000);
+
+
 
 setTimeout(function() {
-    run();
-}, loadingTime);
-
-
-function run() {
-    injectCalibrationElements();
     initGazer();
-}
+}, 500);
 
 // injectCalibrationElements();
 
@@ -663,9 +677,7 @@ function run() {
 //     pause();
 // }, 10000);
 
-// setTimeout(function() {
-//     pause();
-// }, 15000);
+
 
 
 

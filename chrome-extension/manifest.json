@@ -13,10 +13,10 @@
     },
     "content_scripts": [{
       "matches": ["https://www.netflix.com/watch/*", "https://www.google.com/"],
-      "js": ["scripts/content.js","webgazer.js"]
+      "js": ["scripts/content.js","scripts/webgazer.js"]
     }],
     "web_accessible_resources" : [
-      "scripts/control.js"
+      "scripts/control.js", "scripts/webgazer.js"
     ],
     "commands": {
       "calibrate" : {

@@ -97,6 +97,8 @@ window.onload = function() {
 	pauseTimeout = document.getElementById("pauseTimeout");
 	calibrated = document.getElementById("calibrated");
 
+	topMargin.remove();
+
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, 
 			{msg: "get-parameters"}, 
