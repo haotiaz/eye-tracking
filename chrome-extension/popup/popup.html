@@ -5,8 +5,8 @@
       </style>
 
     </head>
-    <body>
-      <div style="width:250px;height:50px;">
+    <body style="width:350px">
+      <!-- <div style="width:250px;height:50px;">
         <input id="toggleOn" type="checkbox" >ON/OFF</input>
         <input id="toggleCamera" type="checkbox" >Camera </input>
       </div>
@@ -27,14 +27,14 @@
       </div>
       <div style="width:250px;height:50px;">
         Calibrated: <input id="calibrated" type="checkbox"></input>
-      </div>
+      </div> -->
 
       <div>
         <label for="volume-inc-rate">Volume increasing rate (1-100):</label>
         <input type="number" id="volume-inc-rate" name="volume-inc-rate" min="1" max="100">
       </div>
       <div>
-        <label for="volume-dec-rate">Volume increasing rate (1-100):</label>
+        <label for="volume-dec-rate">Volume decreasing rate (1-100):</label>
         <input type="number" id="volume-dec-rate" name="volume-dec-rate" min="1" max="100">
       </div>
       <div>
@@ -44,6 +44,18 @@
       <div>
         <label for="rewind-rate">Rewind rate (in seconds):</label>
         <input type="number" id="rewind-rate" name="rewind-rate" min="1">
+      </div>
+      <div>
+        <div>
+          <label for="pause-timeout" style="width:90%">Pause timeout: </label>
+          <span id = "pause-timeout-display"></span>
+        </div>
+        <div>
+          <span>Immediate</span>
+          <input type="range" min="0" max="22" value="50" class="slider" id="pause-timeout" name="pause-timeout">
+          <span>Never</span>
+        </div>
+        
       </div>
       <script src="popup.js" type="text/javascript" ></script>
     </body>

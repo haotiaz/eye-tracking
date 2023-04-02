@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded',function() {
-	initOn();
-	initCam();
+	// initOn();
+	// initCam();
 });
 
 
@@ -65,60 +65,109 @@ function toggleCamera(truth) {
 	});
 }
 
+function sliderValueToTimeout(val) {
+	if (val <= 12) {
+		return 5*val;
+	}
+	else if(val == 22) {
+		return -1;
+	}
+	else {
+		return (val - 11) * 60;
+	}
+}
+
+function timeoutToSliderValue(val) {
+	if (val == -1) {
+		return 22;
+	}
+	else if (val <= 60) {
+		return val/5;
+	}
+	else {
+		return val/60 + 11;
+	}
+}
+
+function timeoutToText(val) {
+	if (val == 0) {
+		return "Immediate";
+	}
+	else if (val == -1) {
+		return "Never";
+	}
+	else {
+		if (val < 60) {
+			return val + " seconds";
+		}
+		else {
+			return Math.round(val/60) + " minutes";
+		}
+	}
+}
+
 
 /////////////////////////////////////////////
 
-var topMargin;
-var leftMargin;
-var bottomMargin;
-var rightMargin;
 var pauseTimeout;
-var calibrated;
+var volumeInc;
+var volumeDec;
+var forward;
+var rewind;
+
+var pauseTimeoutDisplay;
 
 
 function parametersChanged() {
 	console.log("changed");
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, 
-			{msg: "update-parameters", topMarginVal: topMargin.value, leftMarginVal: leftMargin.value,
-			rightMarginVal: rightMargin.value, bottomMarginVal: bottomMargin.value,
-			pauseTimeoutVal: pauseTimeout.value, calibratedVal: calibrated.checked}, 
+			{msg: "update-parameters", pauseTimeoutVal: sliderValueToTimeout(pauseTimeout.value), volumeIncRateVal: volumeInc.value,
+				volumeDecRateVal: volumeDec.value, forwardRateVal: forward.value, rewindRateVal:
+				rewind.value}, 
 			function(response) {
         });
     });
 }
 
+function updatePauseTimeout() {
+	console.log(sliderValueToTimeout(pauseTimeout.value));
+	pauseTimeoutDisplay.innerHTML = timeoutToText(sliderValueToTimeout(pauseTimeout.value));
+}
+
+
 
 window.onload = function() {
-	topMargin = document.getElementById("topMargin");
-	leftMargin = document.getElementById("leftMargin");
-	bottomMargin = document.getElementById("bottomMargin");
-	rightMargin = document.getElementById("rightMargin");
-	pauseTimeout = document.getElementById("pauseTimeout");
-	calibrated = document.getElementById("calibrated");
 
-	topMargin.remove();
+	pauseTimeout = document.getElementById("pause-timeout");
+	volumeInc = document.getElementById("volume-inc-rate");
+	volumeDec = document.getElementById("volume-dec-rate");
+	forward = document.getElementById("forward-rate");
+	rewind = document.getElementById("rewind-rate");
+
+	pauseTimeoutDisplay = document.getElementById("pause-timeout-display");
 
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, 
 			{msg: "get-parameters"}, 
 			function(response) {
-				topMargin.value = response.topMarginVal;
-				leftMargin.value = response.leftMarginVal;
-				bottomMargin.value = response.bottomMarginVal;
-				rightMargin.value = response.rightMarginVal;
-				pauseTimeout.value = response.pauseTimeoutVal;
-				calibrated.checked = response.calibratedVal;
+				pauseTimeout.value = timeoutToSliderValue(response.pauseTimeoutVal);
+				volumeInc.value = response.volumeIncRateVal;
+				volumeDec.value = response.volumeDecRateVal;
+				forward.value = response.forwardRateVal;
+				rewind.value = response.rewindRateVal;
+				pauseTimeoutDisplay.innerHTML = timeoutToText(response.pauseTimeoutVal);
         });
     });
 
+	
 
-	topMargin.addEventListener("change", parametersChanged);
-	leftMargin.addEventListener("change", parametersChanged);
-	bottomMargin.addEventListener("change", parametersChanged);
-	rightMargin.addEventListener("change", parametersChanged);
+	volumeInc.addEventListener("change", parametersChanged);
+	volumeDec.addEventListener("change", parametersChanged);
+	forward.addEventListener("change", parametersChanged);
+	rewind.addEventListener("change", parametersChanged);
 	pauseTimeout.addEventListener("change", parametersChanged);
-	calibrated.addEventListener("change", parametersChanged);
+	pauseTimeout.addEventListener("input", updatePauseTimeout);
 }
 
 

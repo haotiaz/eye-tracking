@@ -16,7 +16,6 @@ var leftDist = '0px';
 
 var textPersistTime = 1500;
 
-
 var topMargin = 220;
 var leftMargin = 220;
 var bottomMargin = 220;
@@ -32,7 +31,7 @@ var rewindRate = 30;
 
 // var showGazeDot = true;
 
-var calibrationInstruction = "Press Alt+Shift+C (Option+Shift+C on Mac) to finish the calibration. You can return to the calibration step by the same shortcut";
+var calibrationInstruction = "To calibrate the eye tracking system, gaze at each red stationary dot on the sreen and click on the dot. To test the accuracy of the eye tracking, gaze at a red stationary dot, and make sure the red prediction dot is fluctuating within the area which contains the dot you are gazing at enclosed by the green lines. If you find that the eye tracking is not accurate, repeat the first step. Press Alt+Shift+C (Option+Shift+C on Mac) to finish the calibration. If you find that some commands are not accurately executed, you can return to the calibration step by pressing the same shortcut.";
 
 
 ////////////// EventListeners ///////////////////
@@ -97,12 +96,11 @@ chrome.runtime.onMessage.addListener(
         console.log(request);
 
         if (request.msg == "update-parameters") {
-            topMargin = request.topMarginVal;
-            leftMargin = request.leftMarginVal;
-            bottomMargin = request.bottomMarginVal;
-            rightMargin = request.rightMarginVal;
+            volumeIncRate = request.volumeIncRateVal;
+            volumeDecRate = request.volumeDecRateVal;
+            forwardRate = request.forwardRateVal;
+            rewindRate = request.rewindRateVal;
             pauseTimeout = request.pauseTimeoutVal;
-            calibrated = request.calibratedVal;
 
             sendResponse({response: "end"});
 
@@ -111,9 +109,12 @@ chrome.runtime.onMessage.addListener(
         
 
         if (request.msg === "get-parameters") {
-            sendResponse({topMarginVal: topMargin, leftMarginVal: leftMargin, 
-            bottomMarginVal: bottomMargin, rightMarginVal: rightMargin,
-            pauseTimeoutVal: pauseTimeout,calibratedVal: calibrated});
+            // sendResponse({topMarginVal: topMargin, leftMarginVal: leftMargin, 
+            // bottomMarginVal: bottomMargin, rightMarginVal: rightMargin,
+            // pauseTimeoutVal: pauseTimeout,calibratedVal: calibrated});
+            sendResponse({pauseTimeoutVal: pauseTimeout, volumeIncRateVal: volumeIncRate,
+            volumeDecRateVal: volumeDecRate, forwardRateVal: forwardRate, rewindRateVal:
+            rewindRate});
         }
 
         if (request.msg === "toggle-calibration") {
@@ -135,6 +136,7 @@ function initGazer() {
 		console.log(result.state);
         var on = (result.state=='on');
         console.log(on);
+
 		if (compatible&&on) {
 			//start the webgazer tracker
 	    	// webgazer.setRegression('ridge') /* currently must set regression and tracker */
@@ -153,6 +155,9 @@ function initGazer() {
                     injectCalibrationElements();
                 } 
                 // console.log(data);
+                if (!calibrated) {
+                    pause();
+                }
                 if (playerReady == true && calibrated == true) {
                     handleData(data);
                 }
@@ -342,14 +347,14 @@ function injectCalibrationElements() {
     var prompt = document.createElement('div');
     prompt.style.backgroundColor = 'white';
     prompt.style.color = "black";
-    prompt.style.width = "50%";
+    prompt.style.width = "40%";
     prompt.style.height = "30%";
     prompt.style.position = "relative";
     prompt.style.margin = "auto";
     // prompt.style.top = "50px";
     prompt.style.top = "100px";
     prompt.style.transform = "translateY(-300%)";
-    prompt.style.opacity = "0.95";
+    prompt.style.opacity = "0.90";
     prompt.style.borderRadius = "20px";
     prompt.style.padding = "20px";
 
@@ -361,7 +366,7 @@ function injectCalibrationElements() {
 
     var content = document.createElement('p');
     content.innerHTML = calibrationInstruction;
-    content.style.fontSize = "15px";
+    content.style.fontSize = "16px";
     prompt.appendChild(content);
 
     var leftBox = document.createElement('div');
@@ -417,7 +422,6 @@ function setCalibrationElements() {
     }
     else {
         s.style.zIndex = "10000";
-        pause();
         webgazer.showPredictionPoints(true);
 
         var topBox = document.getElementById('top-box');
@@ -431,6 +435,8 @@ function setCalibrationElements() {
 
         var rightBox = document.getElementById('right-box');
         rightBox.style.width = rightMargin + 'px';
+
+        pause();
     }
 }
 
@@ -552,11 +558,11 @@ var pauseTimeout = 5; // in seconds
 var pauseID = 0;
 
 var middleCounter = 0;
-const middleTolerance = 3;
+const middleTolerance = 2;
 
 var prevArea = "";
 var areaCounter = 0;
-const areaTolerance = 10;
+const areaTolerance = 5;
 
 var W = window.innerWidth;
 var H = window.innerHeight;
@@ -586,7 +592,7 @@ function handleData(data) {
         }
         handleCommand(area);
     }
-    else {
+    else if (pauseTimeout >= 0) {
         if (prevAction !== "pause") {
             prevAction = "pause";
             setTimeout(function(id) {
@@ -641,16 +647,16 @@ function handleCommand(area) {
         console.log(area);
         areaCounter = 0;
         if (area === "left") {
-            playback(-20);
+            playback(-1 * rewindRate);
         }
         else if (area === "right") {
-            playback(20);
+            playback(forwardRate);
         }
         if (area === "top") {
-            setVolume(0.1);
+            setVolume(volumeIncRate/100);
         }
         if (area === "bottom") {
-            setVolume(-0.1);
+            setVolume(-1 * volumeDecRate/100);
         }
     }
 }

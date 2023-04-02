@@ -34,6 +34,7 @@ document.addEventListener('play', function(event) {
 });
 
 document.addEventListener('pause', function(event) {
+    console.log("control: playing " + player.isPlaying());
     if (player.isPlaying()) {
         player.pause();
         document.dispatchEvent(new CustomEvent('paused', {
