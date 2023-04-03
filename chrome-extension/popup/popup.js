@@ -114,8 +114,10 @@ var volumeInc;
 var volumeDec;
 var forward;
 var rewind;
+var sensitivity;
 
 var pauseTimeoutDisplay;
+var sensitivityDisplay;
 
 
 function parametersChanged() {
@@ -124,15 +126,17 @@ function parametersChanged() {
         chrome.tabs.sendMessage(tabs[0].id, 
 			{msg: "update-parameters", pauseTimeoutVal: sliderValueToTimeout(pauseTimeout.value), volumeIncRateVal: volumeInc.value,
 				volumeDecRateVal: volumeDec.value, forwardRateVal: forward.value, rewindRateVal:
-				rewind.value}, 
+				rewind.value, sensitiveVal: sensitivity.value}, 
 			function(response) {
         });
     });
 }
 
 function updatePauseTimeout() {
-	console.log(sliderValueToTimeout(pauseTimeout.value));
+	// console.log(sliderValueToTimeout(pauseTimeout.value));
+	
 	pauseTimeoutDisplay.innerHTML = timeoutToText(sliderValueToTimeout(pauseTimeout.value));
+	sensitivityDisplay.innerHTML = sensitivity.value;
 }
 
 
@@ -144,8 +148,10 @@ window.onload = function() {
 	volumeDec = document.getElementById("volume-dec-rate");
 	forward = document.getElementById("forward-rate");
 	rewind = document.getElementById("rewind-rate");
+	sensitivity = document.getElementById("sensitivity");
 
 	pauseTimeoutDisplay = document.getElementById("pause-timeout-display");
+	sensitivityDisplay = document.getElementById("sensitivity-display");
 
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, 
@@ -157,6 +163,8 @@ window.onload = function() {
 				forward.value = response.forwardRateVal;
 				rewind.value = response.rewindRateVal;
 				pauseTimeoutDisplay.innerHTML = timeoutToText(response.pauseTimeoutVal);
+				sensitivity.value = response.sensitiveLevelVal;
+				sensitivityDisplay.innerHTML = response.sensitiveLevelVal;
         });
     });
 
@@ -168,6 +176,9 @@ window.onload = function() {
 	rewind.addEventListener("change", parametersChanged);
 	pauseTimeout.addEventListener("change", parametersChanged);
 	pauseTimeout.addEventListener("input", updatePauseTimeout);
+
+	sensitivity.addEventListener("change", parametersChanged);
+	sensitivity.addEventListener("input", updatePauseTimeout);
 }
 
 

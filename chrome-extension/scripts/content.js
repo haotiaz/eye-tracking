@@ -28,10 +28,21 @@ var volumeDecRate = 10;
 var forwardRate = 15;
 var rewindRate = 30;
 
-
-// var showGazeDot = true;
-
 var calibrationInstruction = "To calibrate the eye tracking system, gaze at each red stationary dot on the sreen and click on the dot. To test the accuracy of the eye tracking, gaze at a red stationary dot, and make sure the red prediction dot is fluctuating within the area which contains the dot you are gazing at enclosed by the green lines. If you find that the eye tracking is not accurate, repeat the first step. Press Alt+Shift+C (Option+Shift+C on Mac) to finish the calibration. If you find that some commands are not accurately executed, you can return to the calibration step by pressing the same shortcut.";
+
+var sensitiveLevel = 3;
+const map1 = new Map();
+map1.set(4, [0, 0]);
+map1.set(3, [2, 1]);
+map1.set(2, [5, 2]);
+map1.set(1, [8, 3]);
+map1.set(0, [12, 4]);
+
+// var middleTolerance = 2;
+// var areaTolerance = 5;
+
+var areaTolerance = map1.get(sensitiveLevel)[0];
+var middleTolerance = map1.get(sensitiveLevel)[1];
 
 
 ////////////// EventListeners ///////////////////
@@ -101,6 +112,12 @@ chrome.runtime.onMessage.addListener(
             forwardRate = request.forwardRateVal;
             rewindRate = request.rewindRateVal;
             pauseTimeout = request.pauseTimeoutVal;
+            sensitiveLevel = parseInt(request.sensitiveVal);
+
+            console.log(sensitiveLevel);
+            console.log(map1.get(sensitiveLevel));
+            areaTolerance = map1.get(sensitiveLevel)[0];
+            middleTolerance = map1.get(sensitiveLevel)[1];
 
             sendResponse({response: "end"});
 
@@ -114,13 +131,14 @@ chrome.runtime.onMessage.addListener(
             // pauseTimeoutVal: pauseTimeout,calibratedVal: calibrated});
             sendResponse({pauseTimeoutVal: pauseTimeout, volumeIncRateVal: volumeIncRate,
             volumeDecRateVal: volumeDecRate, forwardRateVal: forwardRate, rewindRateVal:
-            rewindRate});
+            rewindRate, sensitiveLevelVal: sensitiveLevel});
         }
 
         if (request.msg === "toggle-calibration") {
             calibrated = !calibrated;
             setCalibrationElements();
             sendResponse({response: "end"});
+            removeIndicationDot();
         }
         
 });
@@ -609,11 +627,10 @@ var pauseTimeout = 5; // in seconds
 var pauseID = 0;
 
 var middleCounter = 0;
-const middleTolerance = 2;
+
 
 var prevArea = "";
 var areaCounter = 0;
-const areaTolerance = 5;
 
 var W = window.innerWidth;
 var H = window.innerHeight;
