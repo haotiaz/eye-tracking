@@ -478,7 +478,7 @@ function injectBottomText(text, node, existTime) {
 function injectRightText(text, node, existTime) {
     var w = window.innerWidth;
     var h = window.innerHeight;
-    injectCommandText(text, node, existTime, w - 200, h/2);
+    injectCommandText(text, node, existTime, w - 140, h/2);
 }
 
 
@@ -517,6 +517,57 @@ function injectCommandText(text, node, existTime, x, y) {
     }, existTime);
 }
 
+
+function injectTopIndicationDot() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    injectIndicationDot(32, w/2 - 40);
+}
+
+function injectBottomIndicationDot() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    injectIndicationDot(h-65, w/2 - 40);
+}
+
+function injectLeftIndicationDot() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    injectIndicationDot(h/2 - 35, 15);
+}
+
+function injectRightIndicationDot() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    injectIndicationDot(h/2 - 35, w - 35);
+}
+
+function injectIndicationDot(x, y) {
+    var body = document.getElementsByTagName('body')[0];
+
+    var dot = document.createElement('span');
+    dot.style.position = "fixed";
+    dot.style.top = x + "px";
+    dot.style.left = y +"px";
+    dot.style.width = "25px";
+    dot.style.height = "25px";
+    dot.style.borderRadius = "50%";
+    dot.style.backgroundColor = "red";
+    dot.className = "indication";
+
+    body.appendChild(dot)
+}
+
+function removeIndicationDot() {
+    dots = document.getElementsByClassName("indication");
+    for (let i = 0; i < dots.length; i++) {
+        dots[i].remove();
+      }
+}
 
 
 function play() {
@@ -628,10 +679,26 @@ function handleCommand(area) {
     }
     else {
         areaCounter = 1;
+        removeIndicationDot();
+        if (area === "left") {
+            injectLeftIndicationDot();
+        }
+        else if (area === "right") {
+            injectRightIndicationDot();
+        }
+        if (area === "top") {
+            injectTopIndicationDot();
+        }
+        if (area === "bottom") {
+            injectBottomIndicationDot();
+        }
+
         if (area === "middle") {
             middleCounter += 1;
             if (middleCounter >= middleTolerance) {
                 prevArea = area;
+                middleCounter = 0;
+                removeIndicationDot();
             }
         }
         else {
@@ -675,14 +742,6 @@ injectMiddleText("Loading...", 'body', 10000);
 setTimeout(function() {
     initGazer();
 }, 500);
-
-// injectCalibrationElements();
-
-
-// setTimeout(function() {
-//     pause();
-// }, 10000);
-
 
 
 
